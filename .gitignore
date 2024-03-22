@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__
+*.pyc
+.lake_cache/*
+logs/*
+.env
+worker-data
+head-data
+truth-data

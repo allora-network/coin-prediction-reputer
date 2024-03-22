@@ -1,0 +1,98 @@
+version: '3'
+
+services:
+  truth:
+    build:
+      context: .
+      dockerfile: Dockerfile_truth
+    command: python -u /app/app.py
+    environment:
+      - TRUTH_API_PORT=8000
+    # For local testing via URL without workers/heads up:
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./truth-data:/app/data
+    networks:
+      eth-model-local:
+        aliases:
+          - truth
+        ipv4_address: 172.20.0.4
+    
+  worker:
+    container_name: reputer
+    environment:
+      - TRUTH_API_ADDRESS=http://truth:8000
+      - HOME=/data
+    build:
+      context: .
+      dockerfile: Dockerfile_b7s
+    image: allora-truth-base:dev
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+      - |
+        if [ ! -f /data/keys/priv.bin ]; then
+          echo "Generating new private keys..."
+          mkdir -p /data/keys
+          cd /data/keys
+          allora-keys
+        fi
+        # Change boot-nodes below to the key advertised by your head
+        allora-node --role=worker --peer-db=/data/peerdb --function-db=/data/function-db \
+          --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
+          --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
+          --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/12D3KooWNbKMnvUWZ2e3Z5bm4GzSJht7SALzpW2MsS2CBKfXuFfK \
+          --topic=1
+    volumes:
+      - ./worker-data:/data
+    working_dir: /data
+    depends_on:
+      # - truth
+      - head
+    networks:
+      eth-model-local:
+        aliases:
+          - worker
+        ipv4_address: 172.20.0.10
+
+  head:
+    container_name: head-coin
+    image: allora-inference-base-head:dev
+    environment:
+      - HOME=/data
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+      - |
+        if [ ! -f /data/keys/priv.bin ]; then
+          echo "Generating new private keys..."
+          mkdir -p /data/keys
+          cd /data/keys
+          allora-keys
+        fi
+        allora-node --role=head --peer-db=/data/peerdb --function-db=/data/function-db  \
+          --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
+          --private-key=/data/keys/priv.bin --log-level=debug --port=9010 --rest-api=:6000
+    ports:
+      - "6000:6000"
+    volumes:
+      - ./head-data:/data
+    working_dir: /data
+    networks:
+      eth-model-local:
+        aliases:
+          - head
+        ipv4_address: 172.20.0.100
+
+  
+networks:
+  eth-model-local:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  worker-data:
+  head-data:
