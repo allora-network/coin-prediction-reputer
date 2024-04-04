@@ -8,6 +8,7 @@ import os
 
 ETHUSD_TOKEN = "ETHUSD"
 API_PORT = int(os.environ.get('TRUTH_API_PORT', 5000))
+ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/emissions/v1/network_loss/'))
 app = Flask(__name__)
 
 DATABASE_PATH = 'prices.db'
@@ -64,7 +65,7 @@ def update_price(token_name, token_from, token_to):
         return jsonify({'error': f'Failed to update {token_name} price: {str(e)}'}), 500
 
 
-@app.route('/get/<token>/<timestamp>')
+@app.route('/gt/<token>/<timestamp>')
 def get_eth_price(token, timestamp):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -72,7 +73,7 @@ def get_eth_price(token, timestamp):
     result = cursor.fetchone()
     conn.close()
     if result:
-        return jsonify({'value': str(result[1])}), 200
+        return str('"' + str(result[1]) + '"'), 200
     else:
         return jsonify({'error': 'No price data found for the specified token and timestamp'}), 404
 
@@ -120,6 +121,33 @@ def init_price_token(token_name, token_from, token_to):
         print(f'Failed to initialize data for {token_name} token: {str(e)}')
         raise e 
 
+
+def get_test_data():
+    test_data = '{"networkInference":"1234.56","inferrerInferences":[{"node":"allo1inf1","value":"1234.01"},{"node":"allo1inf2","value":"1235.01"},{"node":"allo1inf0000","value":"1234.61"}],"forecasterInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1235.70"},{"node":"allo1inf1111","value":"1234.52"}],"naiveNetworkInference":"1234.30","oneOutNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf0000","value":"1235.45"}],"oneInNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf1111","value":"1235.45"}]}'
+    return test_data, 200
+
+def get_losses_data(topic):
+    try:
+        response = requests.get(ALLORA_VALIDATOR_API_URL + topic)
+        response.raise_for_status()  # Raise exception if request fails
+        return response.json(), 200
+    except Exception as e:
+        print(f'Failed to get data for {topic} token: {str(e)}')
+        print(f'Not providing last losses for {topic} token')
+        return '{}', 200
+
+@app.route('/losses/<topic>')
+def get_losses(topic):
+    print(f"Getting losses for {topic}")
+    try:
+        # Change this when real data is available
+        # get losses data(topic)
+        return get_test_data()
+    
+    except Exception as e:
+        print(f'Failed to get data for {topic} token: {str(e)}')
+        print(f'Not providing last losses for {topic} token')
+        return '{}', 200
 
 if __name__ == '__main__':
     init_price_token(ETHUSD_TOKEN, 'ethereum', 'usd')
