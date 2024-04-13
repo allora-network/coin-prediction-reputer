@@ -11,7 +11,7 @@ API_PORT = int(os.environ.get('TRUTH_API_PORT', 5000))
 ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/emissions/v1/network_loss/'))
 app = Flask(__name__)
 
-DATABASE_PATH = 'prices.db'
+TRUTH_DATABASE_PATH = os.environ.get('TRUTH_DATABASE_PATH', 'prices.db')
 
 
 # Define retry decorator
@@ -22,7 +22,7 @@ def fetch_prices(url):
     return response.json()
 
 def check_create_table():
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = sqlite3.connect(TRUTH_DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS prices
                       (timestamp INTEGER PRIMARY KEY, token TEXT, price REAL)''')
@@ -53,7 +53,7 @@ def update_price(token_name, token_from, token_to):
         token = token_name.lower()
         
         # Save price into database
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(TRUTH_DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token, price))
         conn.commit()
@@ -67,7 +67,7 @@ def update_price(token_name, token_from, token_to):
 
 @app.route('/gt/<token>/<timestamp>')
 def get_eth_price(token, timestamp):
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = sqlite3.connect(TRUTH_DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT timestamp, price FROM prices WHERE token=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (token, timestamp))
     result = cursor.fetchone()
@@ -82,7 +82,7 @@ def init_price_token(token_name, token_from, token_to):
     try:
         check_create_table()
         # Check if there is any existing data for the specified token
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(TRUTH_DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM prices WHERE token=? LIMIT 1", (token_name.lower(),))
         count = cursor.fetchone()[0]
@@ -106,7 +106,7 @@ def init_price_token(token_name, token_from, token_to):
         historical_data = response.json()['prices']
         
         # Parse and insert historical data into the database
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(TRUTH_DATABASE_PATH)
         cursor = conn.cursor()
         for data_point in historical_data:
             timestamp = int(data_point[0] / 1000)  # Convert milliseconds to seconds
