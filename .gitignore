@@ -7,3 +7,4 @@ logs/*
 worker-data
 head-data
 truth-data
+prices.db
