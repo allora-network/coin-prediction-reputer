@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile_truth
     command: python -u /app/app.py
     environment:
+      - TRUTH_DATABASE_PATH=/app/data/prices.db
       - TRUTH_API_PORT=8000
       # - ALLORA_VALIDATOR_API_URL=https://allora-api.testnet.allora.network/emissions/v1/network_loss/
       - ALLORA_VALIDATOR_API_URL=https://localhost:1317/emissions/v1/network_loss/
@@ -29,7 +30,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_b7s
-    image: allora-truth-base:dev
+    # image: allora-truth-base:dev
     entrypoint:
       - "/bin/bash"
       - "-c"
@@ -60,7 +61,7 @@ services:
 
   head:
     container_name: head-coin
-    image: allora-inference-base-head:dev
+    image: alloranetwork/allora-inference-base-head:dev-latest
     environment:
       - HOME=/data
     entrypoint:
@@ -98,3 +99,4 @@ networks:
 volumes:
   worker-data:
   head-data:
+  truth-data:
