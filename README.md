@@ -24,6 +24,8 @@ The `Dockerfile_b7s` file is functional but simple, so you may want to change it
 
 For further details, please check the base repo [allora-inference-base](https://github.com/allora-network/allora-inference-base).
 
+Note: The reputers use an internal blockless topic adding the suffix `/reputer` to be added to the `--topic` flag, but not to the `--allora-chain-topic-id`. 
+
 ###  Application path
 
 By default, the application runtime lives under `/app`, as well as the Python code the worker provides (`/app/main.py`). The current user needs to have write permissions on `/app/runtime`.

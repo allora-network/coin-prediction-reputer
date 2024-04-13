@@ -50,7 +50,7 @@ def update_price(token_name, token_from, token_to):
             return jsonify({'error': 'Invalid token ID'}), 400
         
         timestamp = int(datetime.now().timestamp())
-        token = token_name.upper()
+        token = token_name.lower()
         
         # Save price into database
         conn = sqlite3.connect(DATABASE_PATH)
@@ -84,7 +84,7 @@ def init_price_token(token_name, token_from, token_to):
         # Check if there is any existing data for the specified token
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM prices WHERE token=? LIMIT 1", (token_name.upper(),))
+        cursor.execute("SELECT COUNT(*) FROM prices WHERE token=? LIMIT 1", (token_name.lower(),))
         count = cursor.fetchone()[0]
         conn.close()
         
@@ -111,7 +111,7 @@ def init_price_token(token_name, token_from, token_to):
         for data_point in historical_data:
             timestamp = int(data_point[0] / 1000)  # Convert milliseconds to seconds
             price = data_point[1]
-            cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token_name.upper(), price))
+            cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token_name.lower(), price))
             print(f"inserting data point {timestamp} : {price}" )
         conn.commit()
         conn.close()
