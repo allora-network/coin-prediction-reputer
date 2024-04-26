@@ -30,7 +30,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_b7s
-    # image: allora-truth-base:dev
     entrypoint:
       - "/bin/bash"
       - "-c"
