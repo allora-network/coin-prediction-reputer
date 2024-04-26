@@ -12,22 +12,28 @@ def get_ground_truth(token_name, timestamp):
     response = requests.get(url)
     return response.text
 
-def get_previous_losses(topic):
-    url = f"{TRUTH_ADDRESS}/losses/{topic}"
+def get_previous_losses(topic, blockHeight):
+    url = f"{TRUTH_ADDRESS}/losses/{topic}/{blockHeight}"
     response = requests.get(url)
     return response.text
 
 if __name__ == "__main__":
     # Your code logic with the parsed argument goes here
     try:
-        # Not using to discriminate by topicId for simplicity.
-        topic_id = sys.argv[1]
-        if len(sys.argv) >= 3:
-            timestamp = sys.argv[2]
+        if len(sys.argv) < 5:
+            value = json.dumps({"error": f"Not enough arguments provided: {len(sys.argv)}, expected 4 arguments: topic_id, timestamp, timestampEval, default_arg"})
+        else:
+            topic_id = sys.argv[1]
+            # extract topic_id , removing the suffix "/reputer"
+            topic_id = topic_id.split("/")[0]
+            blockHeight = sys.argv[2]
+            blockHeightEval = sys.argv[3]
+            timestamp = sys.argv[4]  # timestamp of the block
+
         response_gt = get_ground_truth(token_name=ETHUSD_TOKEN, timestamp=timestamp)
         json_gt = json.loads(response_gt)
         try:
-            response_losses = get_previous_losses(topic=topic_id)
+            response_losses = get_previous_losses(topic_id, blockHeightEval)
             json_losses = json.loads(response_losses)
             response_dict = {"gt": json_gt, "losses": json_losses}
             # Serialize as JSON
@@ -40,3 +46,4 @@ if __name__ == "__main__":
         # No gt, no value - error
         value = json.dumps({"error": {str(e)}})
     print(value)
+

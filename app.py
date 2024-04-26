@@ -3,7 +3,8 @@ import requests
 import sqlite3
 from datetime import datetime, timedelta
 import retrying
-import os 
+import os
+import json
 
 
 ETHUSD_TOKEN = "ETHUSD"
@@ -12,6 +13,12 @@ ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http:/
 app = Flask(__name__)
 
 TRUTH_DATABASE_PATH = os.environ.get('TRUTH_DATABASE_PATH', 'prices.db')
+GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
+
+HTTP_RESPONSE_CODE_200 = 200
+HTTP_RESPONSE_CODE_400 = 400
+HTTP_RESPONSE_CODE_404 = 404
+HTTP_RESPONSE_CODE_500 = 500
 
 
 # Define retry decorator
@@ -56,26 +63,31 @@ def update_price(token_name, token_from, token_to):
         conn = sqlite3.connect(TRUTH_DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token, price))
+        cursor.close()
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT count(*) FROM prices WHERE token=? ", (token,))
+        result = cursor.fetchone()[0]
+
         conn.commit()
         conn.close()
-        
         print(f"inserting data point {timestamp} : {price}" )
-        return jsonify({'message': f'{token} price updated successfully'}), 200
+        return jsonify({'message': f'{token} price updated successfully, {str(result)}'}), HTTP_RESPONSE_CODE_200
     except Exception as e:
-        return jsonify({'error': f'Failed to update {token_name} price: {str(e)}'}), 500
+        return jsonify({'error': f'Failed to update {token_name} price: {str(e)}'}), HTTP_RESPONSE_CODE_500
 
 
 @app.route('/gt/<token>/<timestamp>')
-def get_eth_price(token, timestamp):
+def get_price(token, timestamp):
     conn = sqlite3.connect(TRUTH_DATABASE_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, price FROM prices WHERE token=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (token, timestamp))
+    cursor.execute("SELECT timestamp, price FROM prices WHERE token=? ORDER BY ABS(timestamp - ?) LIMIT 1", (token.lower(), timestamp,))
     result = cursor.fetchone()
     conn.close()
     if result:
-        return str('"' + str(result[1]) + '"'), 200
+        return str('"' + str(result[0]) + '"'), 200
     else:
-        return jsonify({'error': 'No price data found for the specified token and timestamp'}), 404
+        return jsonify({'error': 'No price data found for the specified token and timestamp'}), HTTP_RESPONSE_CODE_404
 
 
 def init_price_token(token_name, token_from, token_to):
@@ -84,12 +96,12 @@ def init_price_token(token_name, token_from, token_to):
         # Check if there is any existing data for the specified token
         conn = sqlite3.connect(TRUTH_DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM prices WHERE token=? LIMIT 1", (token_name.lower(),))
+        cursor.execute("SELECT COUNT(*) FROM prices WHERE token=? ", (token_name.lower(),))
         count = cursor.fetchone()[0]
         conn.close()
         
         if count > 0:
-            print(f'Data already exists for {token_name} token')
+            print(f'Data already exists for {token_name} token, {count} entries')
             return
         
         # Fetch historical data for the current year from Coingecko
@@ -124,30 +136,39 @@ def init_price_token(token_name, token_from, token_to):
 
 def get_test_data():
     test_data = '{"networkInference":"1234.56","inferrerInferences":[{"node":"allo1inf1","value":"1234.01"},{"node":"allo1inf2","value":"1235.01"},{"node":"allo1inf0000","value":"1234.61"}],"forecasterInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1235.70"},{"node":"allo1inf1111","value":"1234.52"}],"naiveNetworkInference":"1234.30","oneOutNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf0000","value":"1235.45"}],"oneInNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf1111","value":"1235.45"}]}'
-    return test_data, 200
+    return test_data, HTTP_RESPONSE_CODE_200
 
-def get_losses_data(topic):
+def get_losses_data(topic, blockHeight):
     try:
-        response = requests.get(ALLORA_VALIDATOR_API_URL + topic)
+        url = ALLORA_VALIDATOR_API_URL + topic + "/" + blockHeight
+        response = requests.get(url)
+        print(f"url: {url} , response: {str(response)}")
         response.raise_for_status()  # Raise exception if request fails
-        return response.json(), 200
+        return response.json(), HTTP_RESPONSE_CODE_200
     except Exception as e:
         print(f'Failed to get data for {topic} token: {str(e)}')
         print(f'Not providing last losses for {topic} token')
-        return '{}', 200
+        return '{}', HTTP_RESPONSE_CODE_500
 
-@app.route('/losses/<topic>')
-def get_losses(topic):
-    print(f"Getting losses for {topic}")
-    try:
-        # Change this when real data is available
-        # get losses data(topic)
+@app.route('/losses/<topic>/<blockHeight>')
+def get_losses(topic, blockHeight):
+    print(f"Getting losses for {topic} , {blockHeight}")
+    if GEN_TEST_DATA:
         return get_test_data()
-    
-    except Exception as e:
-        print(f'Failed to get data for {topic} token: {str(e)}')
-        print(f'Not providing last losses for {topic} token')
-        return '{}', 200
+    else:
+        try:
+            losses_data = get_losses_data(topic, blockHeight)
+            # Check if the response contains an error code. Any will do.
+            losses_data_json = json.loads(losses_data)
+            if losses_data_json.get('code'):
+                return f'{"error":{losses_data_json.get('message')}}', HTTP_RESPONSE_CODE_500
+            else:
+                return jsonify(losses_data_json), HTTP_RESPONSE_CODE_200
+
+        except Exception as e:
+            print(f'Failed to get data for {topic} token: {str(e)}')
+            print(f'Not providing last losses for {topic} token')
+            return '{}', HTTP_RESPONSE_CODE_500
 
 if __name__ == '__main__':
     init_price_token(ETHUSD_TOKEN, 'ethereum', 'usd')
