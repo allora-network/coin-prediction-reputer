@@ -161,7 +161,7 @@ def get_losses(topic, blockHeight):
             # Check if the response contains an error code. Any will do.
             losses_data_json = json.loads(losses_data)
             if losses_data_json.get('code'):
-                return f'{"error":{losses_data_json.get('message')}}', HTTP_RESPONSE_CODE_500
+                return f"{'error':{losses_data_json.get('message')}}", HTTP_RESPONSE_CODE_500
             else:
                 return jsonify(losses_data_json), HTTP_RESPONSE_CODE_200
 
