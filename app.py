@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import retrying
 import os
 import json
+import random
 
 
 ETHUSD_TOKEN = "ETHUSD"
@@ -14,6 +15,7 @@ app = Flask(__name__)
 
 TRUTH_DATABASE_PATH = os.environ.get('TRUTH_DATABASE_PATH', 'prices.db')
 GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
+WORKER_ADDRESS_TEST_1 = str(os.environ.get('WORKER_ADDRESS_TEST_1', "allo1tvh6nv02vq6m4mevsa9wkscw53yxvfn7xt8rud"))
 
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_400 = 400
@@ -133,9 +135,17 @@ def init_price_token(token_name, token_from, token_to):
         raise e 
 
 
-def get_test_data():
-    test_data = '{"networkInference":"1234.56","inferrerInferences":[{"node":"allo1inf1","value":"1234.01"},{"node":"allo1inf2","value":"1235.01"},{"node":"allo1inf0000","value":"1234.61"}],"forecasterInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1235.70"},{"node":"allo1inf1111","value":"1234.52"}],"naiveNetworkInference":"1234.30","oneOutNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf0000","value":"1235.45"}],"oneInNetworkInferences":[{"node":"allo1inf1","value":"1234.20"},{"node":"allo1inf2","value":"1234.70"},{"node":"allo1inf1111","value":"1235.45"}]}'
+def get_test_losses_data():
+    combined_value = random.uniform(100, 200)
+    naive_value = random.uniform(100, 200)
+    inferer_value = random.uniform(100, 200)
+    one_out_inferer_value = random.uniform(100, 200)
+    forecaster_value = random.uniform(100, 200)
+    out_out_forecaster_value = random.uniform(100, 200)
+    out_in_forecaster_value =  random.uniform(100, 200)
+    test_data = '{"combined_value":"' + str(combined_value) + '","inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + inferer_value + '"}],"forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + forecaster_value + '"}],"naive_value":"' + naive_value + '","one_out_inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + one_out_inferer_value + '"}],"one_out_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + out_out_forecaster_value + '"}],"one_in_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + out_in_forecaster_value + '"}]}'
     return test_data, HTTP_RESPONSE_CODE_200
+
 
 def get_losses_data(topic, blockHeight):
     try:
@@ -149,11 +159,15 @@ def get_losses_data(topic, blockHeight):
         print(f'Not providing last losses for {topic} token')
         return '{}', HTTP_RESPONSE_CODE_500
 
+
 @app.route('/losses/<topic>/<blockHeight>')
 def get_losses(topic, blockHeight):
     print(f"Getting losses for {topic} , {blockHeight}")
     if GEN_TEST_DATA:
-        return get_test_data()
+        print("Generating test data for topic " + topic + " and block height " + blockHeight)
+        test_data = get_test_losses_data()
+        print("Test data: " + str(test_data))
+        return test_data
     else:
         try:
             losses_data = get_losses_data(topic, blockHeight)
