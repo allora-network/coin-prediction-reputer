@@ -23,15 +23,15 @@ services:
         ipv4_address: 172.20.0.4
     
   worker:
-    container_name: reputer
     environment:
       - TRUTH_API_ADDRESS=http://truth:8000
       - HOME=/data
+      - LOG_FILE=/tmp/app.log
     build:
       context: .
       dockerfile: Dockerfile_b7s
     entrypoint:
-      - "/bin/bash"
+      - "/bin/bash" 
       - "-c"
       - |
         if [ ! -f /data/keys/priv.bin ]; then
@@ -59,7 +59,6 @@ services:
         ipv4_address: 172.20.0.10
 
   head:
-    container_name: head-coin
     image: alloranetwork/allora-inference-base-head:dev-latest
     environment:
       - HOME=/data

@@ -35,7 +35,6 @@ def check_create_table():
                       (timestamp INTEGER PRIMARY KEY, token TEXT, price REAL)''')
     conn.commit()
     conn.close()
-    print("Table created successfully")
 
 
 @app.route('/update/<token_name>/<token_from>/<token_to>')
@@ -161,7 +160,9 @@ def get_losses(topic, blockHeight):
             # Check if the response contains an error code. Any will do.
             losses_data_json = json.loads(losses_data)
             if losses_data_json.get('code'):
-                return f"{'error':{losses_data_json.get('message')}}", HTTP_RESPONSE_CODE_500
+                error_dict = {"error": losses_data_json.get('message')}
+                print("Error in fetching losses data: ", error_dict)
+                return jsonify(error_dict), HTTP_RESPONSE_CODE_500
             else:
                 return jsonify(losses_data_json), HTTP_RESPONSE_CODE_200
 
