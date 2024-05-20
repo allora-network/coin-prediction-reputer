@@ -143,7 +143,7 @@ def get_test_losses_data():
     forecaster_value = random.uniform(100, 200)
     out_out_forecaster_value = random.uniform(100, 200)
     out_in_forecaster_value =  random.uniform(100, 200)
-    test_data = '{"combined_value":"' + str(combined_value) + '","inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + inferer_value + '"}],"forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + forecaster_value + '"}],"naive_value":"' + naive_value + '","one_out_inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + one_out_inferer_value + '"}],"one_out_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + out_out_forecaster_value + '"}],"one_in_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + out_in_forecaster_value + '"}]}'
+    test_data = '{"combined_value":"' + str(combined_value) + '","inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(inferer_value) + '"}],"forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(forecaster_value) + '"}],"naive_value":"' + str(naive_value) + '","one_out_inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(one_out_inferer_value) + '"}],"one_out_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(out_out_forecaster_value) + '"}],"one_in_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(out_in_forecaster_value) + '"}]}'
     return test_data, HTTP_RESPONSE_CODE_200
 
 
