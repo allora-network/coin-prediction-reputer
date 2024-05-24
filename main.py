@@ -15,17 +15,17 @@ def config_logging(log_file):
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 ETHUSD_TOKEN = "ETHUSD"
-TRUTH_ADDRESS = os.environ['TRUTH_API_ADDRESS']
+DATA_PROVIDER_API_ADDRESS = os.environ['DATA_PROVIDER_API_ADDRESS']
 LOG_FILE = os.environ.get('LOG_FILE', '/tmp/app.log')
 config_logging(LOG_FILE)
 
 def get_ground_truth(token_name, timestamp):
-    url = f"{TRUTH_ADDRESS}/gt/{token_name}/{timestamp}"
+    url = f"{DATA_PROVIDER_API_ADDRESS}/gt/{token_name}/{timestamp}"
     response = requests.get(url)
     return response.text
 
 def get_previous_losses(topic, blockHeight):
-    url = f"{TRUTH_ADDRESS}/losses/{topic}/{blockHeight}"
+    url = f"{DATA_PROVIDER_API_ADDRESS}/losses/{topic}/{blockHeight}"
     response = requests.get(url)
     return response.text
 

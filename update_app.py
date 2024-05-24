@@ -1,7 +1,7 @@
 import os
 import requests
 
-inference_address = os.environ['TRUTH_API_ADDRESS']
+inference_address = os.environ['DATA_PROVIDER_API_ADDRESS']
 url               = f"{inference_address}/update"
 
 response = requests.get(url)

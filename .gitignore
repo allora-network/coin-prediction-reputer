@@ -6,5 +6,5 @@ logs/*
 .env
 worker-data
 head-data
-truth-data
+data-provider-data
 prices.db
