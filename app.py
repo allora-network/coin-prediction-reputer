@@ -150,13 +150,12 @@ def get_test_losses_data():
 def get_losses_data(topic, blockHeight):
     try:
         url = ALLORA_VALIDATOR_API_URL + topic + "/" + blockHeight
+        print(f"url: {url}")
         response = requests.get(url)
-        print(f"url: {url} , response: {str(response)}")
         response.raise_for_status()  # Raise exception if request fails
         return response.json(), HTTP_RESPONSE_CODE_200
     except Exception as e:
-        print(f'Failed to get data for {topic} token: {str(e)}')
-        print(f'Not providing last losses for {topic} token')
+        print(f'Failed to get data for {topic} topic for url: {url}: {str(e)}')
         return '{}', HTTP_RESPONSE_CODE_500
 
 
@@ -181,8 +180,7 @@ def get_losses(topic, blockHeight):
                 return jsonify(losses_data_json), HTTP_RESPONSE_CODE_200
 
         except Exception as e:
-            print(f'Failed to get data for {topic} token: {str(e)}')
-            print(f'Not providing last losses for {topic} token')
+            print(f'Failed to get data for {topic} topic: {str(e)}')
             return '{}', HTTP_RESPONSE_CODE_500
 
 if __name__ == '__main__':
