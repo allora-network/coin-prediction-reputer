@@ -1,6 +1,6 @@
 # Coin Price Reputer
 
-An example application: a node to repute and provide ground truth for ETH predictions.
+An example application: a node to repute and provide reputation for ETH predictions.
 
 This is an example of a setup for running an Allora Network reputer node for providing ground truth and reputation, where the Allora Network node defers the requests to another container which is responsible for providing the ground truth, which is run in a separate container.
 It also provides a means of updating the internal database of the ground truth provider.
@@ -95,10 +95,10 @@ The head node has the only open port, and responds to requests in port 6000.
 Example request:
 ```
 curl --location 'http://localhost:6000/api/v1/functions/execute' --header 'Accept: application/json, text/plain, */*' --header 'Content-Type: application/json;charset=UTF-8' --data '{
-    "function_id": "bafybeigpiwl3o73zvvl6dxdqu7zqcub5mhg65jiky2xqb4rdhfmikswzqm",
-    "method": "allora-inference-function.wasm",
+    "function_id": "bafybeihrfb7zic7ffb3vr7xelzve2pi75wizzfz3j3yslzre62xh3tef2u",
+    "method": "loss-calculation-eth.wasm",
     "parameters": null,
-    "topic": "1",
+    "topic": "1/reputer",
     "config": {
         "env_vars": [
             {                              
@@ -107,9 +107,18 @@ curl --location 'http://localhost:6000/api/v1/functions/execute' --header 'Accep
             },
             {                              
                 "name": "ALLORA_ARG_PARAMS",
-                "value": "1711064725"
+                "value": "1712337671"
+            } , 
+            {
+                "name":"ALLORA_BLOCK_HEIGHT_CURRENT",
+                "value":"200"
+            }, 
+            {
+                "name":"ALLORA_BLOCK_HEIGHT_EVAL",
+                "value":"100"
             }
         ],
+        "stdin": "{\"networkInference\":\"46071353120000000000\",\"inferrerInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353100000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353220000000000\"},{\"node\":\"allo1inf0000\",\"value\":\"46071353121000000000\"}],\"forecasterInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353110000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353320000000000\"},{\"node\":\"allo1inf1111\",\"value\":\"4607135311000000000\"}],\"naiveNetworkInference\":\"46071353100000000000\",\"oneOutNetworkInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353000000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353124000000000\"},{\"node\":\"allo1inf0000\",\"value\":\"46071353160000000000\"}],\"oneInNetworkInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353050000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353125000000000\"},{\"node\":\"allo1inf1111\",\"value\":\"46071353080000000000\"}]}",
         "number_of_nodes": -1,
         "timeout" : 2
     }
@@ -131,6 +140,14 @@ To only test the ground truth model, you can simply follow these steps:
   ```
     $ curl http://localhost:8000/update/ETHUSD/ethereum/usd
   ```
+
+
+## Env vars
+
+ALLORA_BLOCK_HEIGHT_CURRENT: Current block being reputed
+ALLORA_BLOCK_HEIGHT_EVAL: Previous block to evaluate (to build EMA with)
+LOSS_FUNCTION_ALLOWS_NEGATIVE: whether the loss function allows negative values or not. Default: true.
+ALLORA_ARG_PARAMS: The timestamp at which ground truth must be obtained.
 
 
 ## Connecting to the Allora network
