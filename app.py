@@ -86,7 +86,7 @@ def get_price(token, timestamp):
     result = cursor.fetchone()
     conn.close()
     if result:
-        return str('"' + str(result[0]) + '"'), 200
+        return str('"' + str(result[1]) + '"'), 200
     else:
         return jsonify({'error': 'No price data found for the specified token and timestamp'}), HTTP_RESPONSE_CODE_404
 
