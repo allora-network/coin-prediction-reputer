@@ -14,7 +14,9 @@ def config_logging(log_file):
     # Configure logging to only log to file
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-ETHUSD_TOKEN = "ETHUSD"
+TOKEN = os.environ.get('TOKEN', "ETH")
+TOKEN_NAME = f"{TOKEN}USD"
+
 DATA_PROVIDER_API_ADDRESS = os.environ['DATA_PROVIDER_API_ADDRESS']
 LOG_FILE = os.environ.get('LOG_FILE', '/tmp/app.log')
 config_logging(LOG_FILE)
@@ -43,7 +45,7 @@ if __name__ == "__main__":
             blockHeightEval = sys.argv[3]
             timestamp = sys.argv[4]  # timestamp of the block
         logging.info(f"Arguments: {topic_id}, {blockHeight}, {blockHeightEval}, {timestamp}")
-        response_gt = get_ground_truth(token_name=ETHUSD_TOKEN, timestamp=timestamp)
+        response_gt = get_ground_truth(token_name=TOKEN_NAME, timestamp=timestamp)
         json_gt = json.loads(response_gt)
         try:
             response_losses = get_previous_losses(topic_id, blockHeightEval)

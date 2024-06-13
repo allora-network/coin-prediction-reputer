@@ -8,7 +8,9 @@ import json
 import random
 
 
-ETHUSD_TOKEN = "ETHUSD"
+TOKEN = os.environ['TOKEN']
+TOKEN_CG_ID = os.environ['TOKEN_CG_ID']
+
 API_PORT = int(os.environ.get('API_PORT', 5000))
 ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/emissions/v1/network_loss/'))
 app = Flask(__name__)
@@ -17,11 +19,12 @@ DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
 GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
 WORKER_ADDRESS_TEST_1 = str(os.environ.get('WORKER_ADDRESS_TEST_1', "allo1tvh6nv02vq6m4mevsa9wkscw53yxvfn7xt8rud"))
 
+TOKEN_NAME = f"{TOKEN}USD"
+
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_400 = 400
 HTTP_RESPONSE_CODE_404 = 404
 HTTP_RESPONSE_CODE_500 = 500
-
 
 # Define retry decorator
 @retrying.retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_attempt_number=5)
@@ -184,6 +187,6 @@ def get_losses(topic, blockHeight):
             return '{}', HTTP_RESPONSE_CODE_500
 
 if __name__ == '__main__':
-    init_price_token(ETHUSD_TOKEN, 'ethereum', 'usd')
+    init_price_token(TOKEN_NAME, TOKEN_CG_ID, 'usd')
     app.run(host='0.0.0.0', port=API_PORT)
 
