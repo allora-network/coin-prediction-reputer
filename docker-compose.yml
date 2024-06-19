@@ -62,7 +62,7 @@ services:
         ipv4_address: 172.20.0.10
 
   head:
-    image: alloranetwork/allora-inference-base-head:dev-latest
+    image: alloranetwork/allora-inference-base-head:latest
     environment:
       - HOME=/data
     entrypoint:
