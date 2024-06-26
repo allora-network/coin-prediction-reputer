@@ -127,7 +127,7 @@ def init_price_token(token_name, token_from, token_to):
         for data_point in historical_data:
             timestamp = int(data_point[0] / 1000)  # Convert milliseconds to seconds
             price = data_point[1]
-            cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token_name.lower(), price))
+            cursor.execute("INSERT OR REPLACE INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token_name.lower(), price))
             print(f"inserting data point {timestamp} : {price}" )
         conn.commit()
         conn.close()
