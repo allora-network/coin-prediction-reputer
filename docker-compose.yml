@@ -11,8 +11,8 @@ services:
       - API_PORT=8000
       # - ALLORA_VALIDATOR_API_URL=https://allora-api.testnet.allora.network/emissions/v1/network_loss/
       - ALLORA_VALIDATOR_API_URL=https://localhost:1317/emissions/v1/network_loss/
-      - TOKEN=BTC
-      - TOKEN_CG_ID=bitcoin
+      - TOKEN=ETH
+      - TOKEN_CG_ID=ethereum
     # For local testing via URL without workers/heads up:
     ports:
       - "8000:8000"
@@ -29,7 +29,7 @@ services:
       - DATA_PROVIDER_API_ADDRESS=http://data-provider:8000
       - HOME=/data
       - LOG_FILE=/tmp/app.log
-      - TOKEN=BTC
+      - TOKEN=ETH
     build:
       context: .
       dockerfile: Dockerfile_b7s

@@ -130,11 +130,11 @@ curl --location 'http://localhost:6000/api/v1/functions/execute' --header 'Accep
 
 This setup allows to develop your model without need for bringing up the head and worker.
 To only test the ground truth model, you can simply follow these steps:
-- Run `docker compose up --build truth` and wait for the initial data load.
+- Run `docker compose up --build data-provider` and wait for the initial data load.
 - Requests can now be sent, e.g. request ETH price ground truths as in: 
   ```
-    $ curl http://localhost:8000/get/ETHUSD/1711105645
-    {"value":"3227.311942291347"}
+    $ curl http://localhost:8000/gt/ETHUSD/$(date +%s) 
+    "3437.18"
   ```
   or add a new data point:
   ```
