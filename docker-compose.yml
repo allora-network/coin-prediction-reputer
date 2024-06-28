@@ -48,7 +48,7 @@ services:
           --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
           --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
           --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/12D3KooWNbKMnvUWZ2e3Z5bm4GzSJht7SALzpW2MsS2CBKfXuFfK \
-          --topic=1/reputer
+          --topic=1/reputer --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network
     volumes:
       - ./worker-data:/data
     working_dir: /data
@@ -77,7 +77,8 @@ services:
         fi
         allora-node --role=head --peer-db=/data/peerdb --function-db=/data/function-db  \
           --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
-          --private-key=/data/keys/priv.bin --log-level=debug --port=9010 --rest-api=:6000
+          --private-key=/data/keys/priv.bin --log-level=debug --port=9010 --rest-api=:6000 \
+          --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network
     ports:
       - "6000:6000"
     volumes:
