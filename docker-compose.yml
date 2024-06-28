@@ -47,9 +47,8 @@ services:
         allora-node --role=worker --peer-db=/data/peerdb --function-db=/data/function-db \
           --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
           --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
-          --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/12D3KooWNbKMnvUWZ2e3Z5bm4GzSJht7SALzpW2MsS2CBKfXuFfK \
-          --topic=1/reputer --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network \
-          --allora-chain-topic-id=allora-topic-1-reputer
+          --boot-nodes=/dns4/head-0-p2p.v2.testnet.allora.network/tcp/32130/p2p/12D3KooWGKY4z2iNkDMERh5ZD8NBoAX6oWzkDnQboBRGFTpoKNDF \
+          --topic=allora-topic-4-reputer --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network
     volumes:
       - ./worker-data:/data
     working_dir: /data
