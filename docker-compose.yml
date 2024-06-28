@@ -48,7 +48,8 @@ services:
           --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
           --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
           --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/12D3KooWNbKMnvUWZ2e3Z5bm4GzSJht7SALzpW2MsS2CBKfXuFfK \
-          --topic=1/reputer --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network
+          --topic=1/reputer --allora-node-rpc-address=https://allora-rpc.v2.testnet.allora.network \
+          --allora-chain-topic-id=allora-topic-1-reputer
     volumes:
       - ./worker-data:/data
     working_dir: /data
