@@ -43,7 +43,9 @@ def check_create_table():
 
 
 @app.route('/update/<token_name>/<token_from>/<token_to>')
-def update_price(token_name, token_from, token_to):
+@app.route('/update')
+@app.route('/update/')
+def update_price(token_name=TOKEN, token_from=TOKEN_CG_ID, token_to='usd'):
     # Attempt initializing the token data if not already
     try:
         init_price_token(token_name, token_from, token_to)
