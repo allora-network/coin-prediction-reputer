@@ -66,7 +66,7 @@ def update_price(token_name, token_from, token_to):
         # Save price into database
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token, price))
+        cursor.execute("INSERT OR REPLACE INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token, price))
         cursor.close()
 
         cursor = conn.cursor()
