@@ -44,7 +44,6 @@ def check_create_table():
 
 @app.route('/update/<token_name>/<token_from>/<token_to>')
 @app.route('/update')
-@app.route('/update/')
 def update_price(token_name=TOKEN, token_from=TOKEN_CG_ID, token_to='usd'):
     # Attempt initializing the token data if not already
     try:
@@ -176,7 +175,7 @@ def get_losses(topic, blockHeight):
         try:
             losses_data = get_losses_data(topic, blockHeight)
             # Check if the response contains an error code. Any will do.
-            losses_data_json = json.loads(losses_data)
+            losses_data_json = json.loads(json.dumps(losses_data[0]))
             if losses_data_json.get('code'):
                 error_dict = {"error": losses_data_json.get('message')}
                 print("Error in fetching losses data: ", error_dict)
