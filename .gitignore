@@ -8,3 +8,4 @@ worker-data
 head-data
 data-provider-data
 prices.db
+/.venv11
