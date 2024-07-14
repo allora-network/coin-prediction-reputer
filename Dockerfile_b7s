@@ -1,4 +1,4 @@
-FROM alloranetwork/allora-inference-base:latest
+FROM alloranetwork/allora-inference-base:v0.2.12
 
 USER root
 RUN pip install requests
