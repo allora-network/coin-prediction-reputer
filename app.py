@@ -37,7 +37,8 @@ def check_create_table():
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS prices
-                      (timestamp INTEGER PRIMARY KEY, token TEXT, price REAL)''')
+                      (timestamp INTEGER, token TEXT, price REAL,
+                      PRIMARY KEY (timestamp, token))''')
     conn.commit()
     conn.close()
 
