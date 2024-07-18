@@ -21,7 +21,7 @@ services:
         aliases:
           - data-provider
         ipv4_address: 172.20.0.4
-    
+
   worker:
     environment:
       - DATA_PROVIDER_API_ADDRESS=http://data-provider:8000
@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: Dockerfile_b7s
     entrypoint:
-      - "/bin/bash" 
+      - "/bin/bash"
       - "-c"
       - |
         if [ ! -f /data/keys/priv.bin ]; then
@@ -47,7 +47,7 @@ services:
           --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
           --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/head-id \
           --topic=allora-topic-{allora-chain-topic-id}-reputer --allora-chain-worker-mode=reputer
-          
+
     volumes:
       - ./worker-data:/data
     working_dir: /data
@@ -89,7 +89,7 @@ services:
           - head
         ipv4_address: 172.20.0.100
 
-  
+
 networks:
   eth-model-local:
     driver: bridge
