@@ -19,6 +19,8 @@ DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
 GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
 WORKER_ADDRESS_TEST_1 = str(os.environ.get('WORKER_ADDRESS_TEST_1', "allo1tvh6nv02vq6m4mevsa9wkscw53yxvfn7xt8rud"))
 
+BLOCK_TIME_SECONDS = 5
+
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_400 = 400
 HTTP_RESPONSE_CODE_404 = 404
@@ -37,8 +39,8 @@ def check_create_table():
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS prices
-                      (timestamp INTEGER, token TEXT, price REAL,
-                      PRIMARY KEY (timestamp, token))''')
+                      (block_height INTEGER, token TEXT, price REAL,
+                      PRIMARY KEY (block_height, token))''')
     conn.commit()
     conn.close()
 
@@ -62,13 +64,15 @@ def update_price(token_name=TOKEN_NAME, token_from=TOKEN_CG_ID, token_to='usd'):
         else:
             return jsonify({'error': 'Invalid token ID'}), 400
         
-        timestamp = int(datetime.now().timestamp())
+        # Get current block height
+        block_data = get_latest_network_block()
+        block_height = block_data[0]['block']['header']['height']
         token = token_name.lower()
         
         # Save price into database
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("INSERT OR REPLACE INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token, price))
+        cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price) VALUES (?, ?, ?)", (block_height, token, price))
         cursor.close()
 
         cursor = conn.cursor()
@@ -77,23 +81,32 @@ def update_price(token_name=TOKEN_NAME, token_from=TOKEN_CG_ID, token_to='usd'):
 
         conn.commit()
         conn.close()
-        print(f"inserting data point {timestamp} : {price}" )
+        print(f"inserting data point {block_height} : {price}" )
         return jsonify({'message': f'{token} price updated successfully, {str(result)}'}), HTTP_RESPONSE_CODE_200
     except Exception as e:
         return jsonify({'error': f'Failed to update {token_name} price: {str(e)}'}), HTTP_RESPONSE_CODE_500
 
 
-@app.route('/gt/<token>/<timestamp>')
-def get_price(token, timestamp):
+@app.route('/gt/<token>/<block_height>')
+def get_price(token, block_height):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, price FROM prices WHERE token=? ORDER BY ABS(timestamp - ?) LIMIT 1", (token.lower(), timestamp,))
+    cursor.execute("""
+        SELECT block_height, price 
+        FROM prices 
+        WHERE token=? AND block_height <= ? 
+        ORDER BY ABS(block_height - ?) LIMIT 1
+    """, (
+        token.lower(), 
+        block_height,
+        block_height
+    ))
     result = cursor.fetchone()
     conn.close()
     if result:
         return str('"' + str(result[1]) + '"'), 200
     else:
-        return jsonify({'error': 'No price data found for the specified token and timestamp'}), HTTP_RESPONSE_CODE_404
+        return jsonify({'error': 'No price data found for the specified token and block_height'}), HTTP_RESPONSE_CODE_404
 
 
 def init_price_token(token_name, token_from, token_to):
@@ -109,10 +122,14 @@ def init_price_token(token_name, token_from, token_to):
         if count > 0:
             print(f'Data already exists for {token_name} token, {count} entries')
             return
-        
+
         # Fetch historical data for the current year from Coingecko
         end_date = datetime.now()
         start_date = datetime.now() - timedelta(days=30)
+
+        # Fetch latest block height
+        block_data = get_latest_network_block()
+        latest_block_height = int(block_data[0]['block']['header']['height'])
 
         # Convert to epoch timestamp
         end_date_epoch = int(end_date.timestamp())
@@ -127,10 +144,17 @@ def init_price_token(token_name, token_from, token_to):
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         for data_point in historical_data:
-            timestamp = int(data_point[0] / 1000)  # Convert milliseconds to seconds
+            price_timestamp = data_point[0]
+            # Convert timestamp to block height
+            blocks_diff = (end_date_epoch - (price_timestamp / 1000)) / BLOCK_TIME_SECONDS
+            block_height = int(latest_block_height - blocks_diff)
+
+            if (block_height < 1):
+                continue
+            
             price = data_point[1]
-            cursor.execute("INSERT OR REPLACE INTO prices (timestamp, token, price) VALUES (?, ?, ?)", (timestamp, token_name.lower(), price))
-            print(f"inserting data point {timestamp} : {price}" )
+            cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price) VALUES (?, ?, ?)", (block_height, token_name.lower(), price))
+            print(f"inserting data point - block {block_height} : {price}" )
         conn.commit()
         conn.close()
         
@@ -163,6 +187,15 @@ def get_losses_data(topic, blockHeight):
         print(f'Failed to get data for {topic} topic for url: {url}: {str(e)}')
         return '{}', HTTP_RESPONSE_CODE_500
 
+def get_latest_network_block():
+    try:
+        url = ALLORA_VALIDATOR_API_URL + "cosmos/base/tendermint/v1beta1/blocks/latest"
+        response = requests.get(url)
+        response.raise_for_status()  # Raise exception if request fails
+        return response.json(), HTTP_RESPONSE_CODE_200
+    except Exception as e:
+        print(f'Failed to get block height: {str(e)}')
+        return '{}', HTTP_RESPONSE_CODE_500
 
 @app.route('/losses/<topic>/<blockHeight>')
 def get_losses(topic, blockHeight):
