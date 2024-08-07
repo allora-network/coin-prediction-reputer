@@ -13,11 +13,13 @@ TOKEN_CG_ID = os.environ['TOKEN_CG_ID']
 TOKEN_NAME = f"{TOKEN}USD"
 
 API_PORT = int(os.environ.get('API_PORT', 5000))
-ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','https://allora-api.devnet.behindthecurtain.xyz/'))
+ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/emissions/v1/network_loss/'))
 
 DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
 GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
 WORKER_ADDRESS_TEST_1 = str(os.environ.get('WORKER_ADDRESS_TEST_1', "allo1tvh6nv02vq6m4mevsa9wkscw53yxvfn7xt8rud"))
+
+BLOCK_TIME_SECONDS = 5
 
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_400 = 400
@@ -144,7 +146,7 @@ def init_price_token(token_name, token_from, token_to):
         for data_point in historical_data:
             price_timestamp = data_point[0]
             # Convert timestamp to block height
-            blocks_diff = (end_date_epoch - (price_timestamp / 1000)) / 5
+            blocks_diff = (end_date_epoch - (price_timestamp / 1000)) / BLOCK_TIME_SECONDS
             block_height = int(latest_block_height - blocks_diff)
 
             if (block_height < 1):
