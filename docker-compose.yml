@@ -1,10 +1,6 @@
-version: '3'
-
 services:
   data-provider:
-    build:
-      context: .
-      dockerfile: Dockerfile_data_provider
+    build: .
     command: python -u /app/app.py
     environment:
       - DATABASE_PATH=/app/data/prices.db
@@ -13,93 +9,30 @@ services:
       - ALLORA_VALIDATOR_API_URL=https://localhost:1317/emissions/v1/network_loss/
       - TOKEN=ETH
       - TOKEN_CG_ID=ethereum
-    # For local testing via URL without workers/heads up:
     ports:
       - "8000:8000"
     volumes:
       - ./data-provider-data:/app/data
-    networks:
-      eth-model-local:
-        aliases:
-          - data-provider
-        ipv4_address: 172.20.0.4
-    
-  worker:
-    environment:
-      - DATA_PROVIDER_API_ADDRESS=http://data-provider:8000
-      - HOME=/data
-      - LOG_FILE=/tmp/app.log
-      - TOKEN=ETH
-    build:
-      context: .
-      dockerfile: Dockerfile_b7s
-    entrypoint:
-      - "/bin/bash" 
-      - "-c"
-      - |
-        if [ ! -f /data/keys/priv.bin ]; then
-          echo "Generating new private keys..."
-          mkdir -p /data/keys
-          cd /data/keys
-          allora-keys
-        fi
-        # Change boot-nodes below to the key advertised by your head
-        allora-node --role=worker --peer-db=/data/peerdb --function-db=/data/function-db \
-          --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
-          --private-key=/data/keys/priv.bin --log-level=debug --port=9011 \
-          --boot-nodes=/ip4/172.20.0.100/tcp/9010/p2p/head-id \
-          --topic=allora-topic-{allora-chain-topic-id}-reputer --allora-chain-worker-mode=reputer
-          
-    volumes:
-      - ./worker-data:/data
-    working_dir: /data
+
+  data-updater:
+    container_name: data-updater
+    build: .
     depends_on:
       - data-provider
-      - head
-    networks:
-      eth-model-local:
-        aliases:
-          - worker
-        ipv4_address: 172.20.0.10
-
-  head:
-    image: alloranetwork/allora-inference-base-head:latest
+    entrypoint: ["sh", "-c", "while true; sleep 20; do python -u /app/update_app.py; done"]
     environment:
-      - HOME=/data
-    entrypoint:
-      - "/bin/bash"
-      - "-c"
-      - |
-        if [ ! -f /data/keys/priv.bin ]; then
-          echo "Generating new private keys..."
-          mkdir -p /data/keys
-          cd /data/keys
-          allora-keys
-        fi
-        allora-node --role=head --peer-db=/data/peerdb --function-db=/data/function-db  \
-          --runtime-path=/app/runtime --runtime-cli=bls-runtime --workspace=/data/workspace \
-          --private-key=/data/keys/priv.bin --log-level=debug --port=9010 --rest-api=:6000 \
-          --boot-nodes=/dns4/head-0-p2p.v2.testnet.allora.network/tcp/32130/p2p/12D3KooWGKY4z2iNkDMERh5ZD8NBoAX6oWzkDnQboBRGFTpoKNDF
-    ports:
-      - "6000:6000"
-    volumes:
-      - ./head-data:/data
-    working_dir: /data
-    networks:
-      eth-model-local:
-        aliases:
-          - head
-        ipv4_address: 172.20.0.100
+      - DATA_PROVIDER_API_ADDRESS=http://data-provider:8000
 
-  
-networks:
-  eth-model-local:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
+  reputer:
+    container_name: reputer
+    image: alloranetwork/allora-offchain-node:latest
+    volumes:
+      - ./worker-data:/data
+    depends_on:
+      - data-provider
+    env_file:
+      - ./worker-data/env_file
 
 volumes:
   worker-data:
-  head-data:
   data-provider-data:

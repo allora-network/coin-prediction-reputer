@@ -3,9 +3,10 @@ __pycache__
 *.pyc
 .lake_cache/*
 logs/*
-.env
-worker-data
-head-data
-data-provider-data
 prices.db
 /.venv11
+
+.allorad
+.cache
+config.json
+env_file

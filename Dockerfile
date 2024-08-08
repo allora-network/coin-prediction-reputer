@@ -11,7 +11,7 @@ RUN pip install --upgrade pip setuptools \
 
 FROM project_env
 
-COPY gunicorn_conf.py main.py update_app.py /app/
+COPY gunicorn_conf.py update_app.py /app/
 
 COPY app.py /app/app.py
 

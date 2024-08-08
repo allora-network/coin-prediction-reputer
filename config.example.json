@@ -1,0 +1,25 @@
+{
+    "wallet": {
+        "addressKeyName": "test",
+        "addressRestoreMnemonic": "",
+        "alloraHomeDir": "",
+        "gas": "1000000",
+        "gasAdjustment": 1.0,
+        "nodeRpc": "http://localhost:26657",
+        "maxRetries": 1,
+        "delay": 1,
+        "submitTx": false
+    },
+    "reputer": [
+        {
+            "topicId": 1,
+            "reputerEntrypointName": "api-worker-reputer",
+            "loopSeconds": 30,
+            "minStake": 100000,
+            "parameters": {
+                "SourceOfTruthEndpoint": "http://data-provider:8000/gt/{Token}/{BlockHeight}",
+                "Token": "ETHUSD"
+            }
+        }
+    ]
+}
