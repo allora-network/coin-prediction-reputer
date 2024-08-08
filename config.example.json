@@ -17,7 +17,7 @@
             "loopSeconds": 30,
             "minStake": 100000,
             "parameters": {
-                "SourceOfTruthEndpoint": "http://data-provider:8000/gt/{Token}/{BlockHeight}",
+                "SourceOfTruthEndpoint": "http://truth:8000/gt/{Token}/{BlockHeight}",
                 "Token": "ETHUSD"
             }
         }

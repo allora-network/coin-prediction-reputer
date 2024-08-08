@@ -6,6 +6,7 @@ logs/*
 prices.db
 /.venv11
 
+truth-data
 .allorad
 .cache
 config.json

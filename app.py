@@ -110,6 +110,7 @@ def get_price(token, block_height):
 
 
 def init_price_token(token_name, token_from, token_to):
+    print(ALLORA_VALIDATOR_API_URL)
     try:
         check_create_table()
         # Check if there is any existing data for the specified token

@@ -1,5 +1,5 @@
 services:
-  data-provider:
+  truth:
     build: .
     command: python -u /app/app.py
     environment:
@@ -12,16 +12,16 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data-provider-data:/app/data
+      - ./truth-data:/app/data
 
-  data-updater:
-    container_name: data-updater
+  updater:
+    container_name: update
     build: .
     depends_on:
-      - data-provider
-    entrypoint: ["sh", "-c", "while true; sleep 20; do python -u /app/update_app.py; done"]
+      - truth
+    entrypoint: ["sh", "-c", "while true; sleep 60; do python -u /app/update_app.py; done"]
     environment:
-      - DATA_PROVIDER_API_ADDRESS=http://data-provider:8000
+      - DATA_PROVIDER_API_ADDRESS=http://truth:8000
 
   reputer:
     container_name: reputer
@@ -29,10 +29,10 @@ services:
     volumes:
       - ./worker-data:/data
     depends_on:
-      - data-provider
+      - truth
     env_file:
       - ./worker-data/env_file
 
 volumes:
   worker-data:
-  data-provider-data:
+  truth-data:

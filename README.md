@@ -7,160 +7,82 @@ It also provides a means of updating the internal database of the ground truth p
 
 One of the goals of this repo is to show how to create a basic reputer providing ground truth for the network as a side container to use it for providing inferences to the Allora Network setup. More complex setups for finer-grained control are recommended for production.
 
-# Components
+## Components
 
-* **worker**: The node that will respond to reputer requests from the Allora Network heads.
-* **head**: An Allora Network head node. This is not required for running your node in the Allora Network, but it will help for testing your node emulating a network.
-* **truth**: A container that performs reputation, keeps state of the model and responds to requests for reputation through a simple Flask application to be managed internally. It fetches data from CoinGecko.
+- **Reputer**: The node that responds to reputer requests from the Allora Network.
+- **Truth**: A container that performs reputation tasks, maintains the state of the model, and responds to reputation requests via a simple Flask application. It fetches data from CoinGecko.
+- **Updater**: A cron-like container designed to periodically trigger the Truth node's data updates.
 
+Check the `docker-compose.yml` file for the detailed setup of each component.
 
-# docker
+## Docker-Compose Setup
 
-## Structure
+A complete working example is provided in the `docker-compose.yml` file.
 
-- head and worker nodes are built upon `Dockerfile_b7s` file
+### Steps to Setup
 
-The `Dockerfile_b7s` file is functional but simple, so you may want to change it to fit your needs, if you attempt to expand upon the current setup.
+1. **Clone the Repository**
 
-For further details, please check the base repo [allora-inference-base](https://github.com/allora-network/allora-inference-base).
+    ```sh
+    git clone <repository_url>
+    cd <repository_directory>
+    ```
 
-Note: The reputers use an internal blockless topic adding the suffix `/reputer` to be added to the `--topic` flag, but not to the `--allora-chain-topic-id`. 
+2. **Copy and Populate Configuration**
 
-###  Application path
+    Copy the example configuration file and populate it with your variables:
+    ```sh
+    cp config.example.json config.json
+    ```
 
-By default, the application runtime lives under `/app`, as well as the Python code the worker provides (`/app/main.py`). The current user needs to have write permissions on `/app/runtime`.
+3. **Initialize Reputer**
 
-### Data volume and permissions
+    Run the following commands from the project's root directory to initialize the reputer:
+    ```sh
+    chmod +x init.docker
+    ./init.docker
+    ```
+    These commands will:
+    - Automatically create Allora keys for your reputer.
+    - Export the needed variables from the created account to be used by the reputer node, bundle them with your provided `config.json`, and pass them to the node as environment variables.
 
-It is recommended to mount `/data` as a volume, to persist the node databases of peers, functions, etc. which are defined in the flags passed to the worker.
-You can create this folder e.g. `mkdir data` in the repo root directory.
+4. **Faucet Your Reputer Node**
+    
+    You can find the offchain reputer node's address in `./worker-data/env_file` under `ALLORA_OFFCHAIN_ACCOUNT_ADDRESS`. [Add faucet funds](https://docs.allora.network/devs/get-started/setup-wallet#add-faucet-funds) to your reputer's wallet before starting it.
 
-It is recommended to set up two different `/data` volumes. It is suggested to use `worker-data` for the worker, `head-data` for the head.
+5. **Start the Services**
 
-Troubleshooting: A conflict may happen between the uid/gid of the user inside the container(1001) with the permissions of your own user.
-To make the container user have permissions to write on the `/data` volume, you may need to set the UID/GID from the user running the container. You can get those in linux/osx via `id -u` and `id -g`.
-The current `docker-compose.yml` file shows the `worker` service setting UID and GID. As well, the `Dockerfile` also sets UID/GID values.
+    Run the following command to start the reputer, truth, and updater nodes:
+    ```sh
+    docker compose up --build
+    ```
+    To confirm that the reputer successfully sends data to the chain, look for the following log:
+    ```json
+    {"level":"debug","msg":"Send Reputer Data to chain","txHash":"<tx-hash>","time":"<timestamp>","message":"Success"}
+    ```
 
+## Testing Ground Truth Only
 
-# Docker-Compose Setup
-A full working example is provided in the `docker-compose.yml` file.
+This setup allows you to develop your model without the need to bring up the offchain node or the updater. To test the ground truth model only:
 
+1. **Start the Ground Truth Node**
 
-## Setup
+    ```sh
+    docker compose up --build truth
+    ```
+    Wait for the initial data load.
 
-1. **Generate keys**: Create a set of keys for your head and worker nodes. These keys will be used in the configuration of the head and worker nodes.
+2. **Send Requests**
 
-**Create head keys:**
-```
-docker run -it --entrypoint=bash -v ./head-data:/data alloranetwork/allora-inference-base:latest -c "mkdir -p /data/keys && (cd /data/keys && allora-keys)"
-```
-
-**Create worker keys**
-```
-docker run -it --entrypoint=bash -v ./worker-data:/data alloranetwork/allora-inference-base:latest -c "mkdir -p /data/keys && (cd /data/keys && allora-keys)"
-```
-
-Important note: If no keys are specified in the volumes, new keys will be automatically created inside `head-data/keys` and `worker-data/keys` when first running step 4.
-
-2. **Connect the worker node to the head node**:
-
-At this step, both worker and head nodes identities are generated inside `head-data/keys` and `worker-data/keys`.
-To instruct the worker node to connect to the head node:
-- run `cat head-data/keys/identity` to extract the head node's peer_id 
-- copy this printed peer_id to replace the `head-id` placeholder value specified inside the docker-compose.yml file (or docker-compose.arm64.yml based on your configuration) when running the worker service: `--boot-nodes=/ip4/172.22.0.100/tcp/9010/p2p/head-id`
-
-3. **Run setup**
-
-Once all the above is set up, run `docker compose up`
-This will bring up the head, the worker and the truth nodes (which will run an initial update). 
-
-4. **Keep it updated**
-
-You can keep the state updated by hitting the url: 
-
-```
-http://localhost:8000/update/<token-name>/<token-from>/<token-to>
-```
-where:
-token-name: the name of the token on internal database, e.g. ETHUSD
-token-from: the name of the token on Coingecko naming, e.g. ethereum
-token-to: the name of the token on Coingecko naming, e.g. usd
-
-It is expected that this endpoint is hit periodically, being crucial for maintaining the accuracy of the ground truth provided.
-
-## Testing docker-compose setup
-
-The head node has the only open port, and responds to requests in port 6000.
-
-Example request:
-```
-curl --location 'http://localhost:6000/api/v1/functions/execute' --header 'Accept: application/json, text/plain, */*' --header 'Content-Type: application/json;charset=UTF-8' --data '{
-    "function_id": "bafybeihrfb7zic7ffb3vr7xelzve2pi75wizzfz3j3yslzre62xh3tef2u",
-    "method": "loss-calculation-eth.wasm",
-    "parameters": null,
-    "topic": "1/reputer",
-    "config": {
-        "env_vars": [
-            {                              
-                "name": "BLS_REQUEST_PATH",
-                "value": "/api"
-            },
-            {                              
-                "name": "ALLORA_ARG_PARAMS",
-                "value": "1712337671"
-            } , 
-            {
-                "name":"ALLORA_BLOCK_HEIGHT_CURRENT",
-                "value":"200"
-            }, 
-            {
-                "name":"ALLORA_BLOCK_HEIGHT_EVAL",
-                "value":"100"
-            }
-        ],
-        "stdin": "{\"networkInference\":\"46071353120000000000\",\"inferrerInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353100000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353220000000000\"},{\"node\":\"allo1inf0000\",\"value\":\"46071353121000000000\"}],\"forecasterInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353110000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353320000000000\"},{\"node\":\"allo1inf1111\",\"value\":\"4607135311000000000\"}],\"naiveNetworkInference\":\"46071353100000000000\",\"oneOutNetworkInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353000000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353124000000000\"},{\"node\":\"allo1inf0000\",\"value\":\"46071353160000000000\"}],\"oneInNetworkInferences\":[{\"node\":\"allo1inf1\",\"value\":\"46071353050000000000\"},{\"node\":\"allo1inf2\",\"value\":\"46071353125000000000\"},{\"node\":\"allo1inf1111\",\"value\":\"46071353080000000000\"}]}",
-        "number_of_nodes": -1,
-        "timeout" : 2
-    }
-}'
-```
-
-
-# Testing ground truth only
-
-This setup allows to develop your model without need for bringing up the head and worker.
-To only test the ground truth model, you can simply follow these steps:
-- Run `docker compose up --build data-provider` and wait for the initial data load.
-- Requests can now be sent, e.g. request ETH price ground truths as in: 
-  ```
-    $ curl http://localhost:8000/gt/ETHUSD/$(date +%s) 
-    "3437.18"
-  ```
-  or add a new data point:
-  ```
-    $ curl http://localhost:8000/update/ETHUSD/ethereum/usd
-  ```
-
-
-## Env vars
-
-ALLORA_BLOCK_HEIGHT_CURRENT: Current block being reputed
-ALLORA_BLOCK_HEIGHT_EVAL: Previous block to evaluate (to build EMA with)
-LOSS_FUNCTION_ALLOWS_NEGATIVE: whether the loss function allows negative values or not. Default: true.
-ALLORA_ARG_PARAMS: The timestamp at which ground truth must be obtained.
-
-
-## Connecting to the Allora network
- In order to connect to the Allora network, both the head and the worker need to register against it.  More details on [allora-inference-base](https://github.com/allora-network/allora-inference-base) repo.
-The following optional flags are used in the `command:` section of the `docker-compose.yml` file to define the connectivity with the Allora network.
-
-```
---allora-chain-key-name=index-provider  # your local key name in your keyring
---allora-chain-restore-mnemonic='pet sock excess ...'  # your node's Allora address mnemonic
---allora-node-rpc-address=  # RPC address of a node in the chain
---allora-chain-topic-id=  # The topic id from the chain that you want to provide predictions for
-```
-In order for the nodes to register with the chain, a funded address is needed first.
-If these flags are not provided, the nodes will not register to the appchain and will not attempt to connect to the appchain.
-
-
+    - Request ETH price ground truths:
+      ```sh
+      curl http://127.0.0.1:8000/gt/ETHUSD/1200
+      ```
+      Expected response:
+      ```json
+      {"value":"2564.021586281073"}
+      ```
+    - Add a new data point:
+      ```sh
+      curl http://127.0.0.1:8000/update/ETHUSD/ethereum/usd
+      ```
