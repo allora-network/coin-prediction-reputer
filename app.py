@@ -12,17 +12,14 @@ TOKEN = os.environ['TOKEN']
 TOKEN_CG_ID = os.environ['TOKEN_CG_ID']
 TOKEN_NAME = f"{TOKEN}USD"
 
-API_PORT = int(os.environ.get('API_PORT', 5000))
-ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/emissions/v1/network_loss/'))
+URL_QUERY_LATEST_BLOCK="cosmos/base/tendermint/v1beta1/blocks/latest"
 
+API_PORT = int(os.environ.get('API_PORT', 5000))
+ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','http://localhost:1317/'))
 DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
-GEN_TEST_DATA = bool(os.environ.get('GEN_TEST_DATA', False))
-WORKER_ADDRESS_TEST_1 = str(os.environ.get('WORKER_ADDRESS_TEST_1', "allo1tvh6nv02vq6m4mevsa9wkscw53yxvfn7xt8rud"))
 
 BLOCK_TIME_SECONDS = 5
-
 HTTP_RESPONSE_CODE_200 = 200
-HTTP_RESPONSE_CODE_400 = 400
 HTTP_RESPONSE_CODE_404 = 404
 HTTP_RESPONSE_CODE_500 = 500
 
@@ -34,6 +31,7 @@ def fetch_prices(url):
     response = requests.get(url)
     response.raise_for_status()  # Raise exception if request fails
     return response.json()
+
 
 def check_create_table():
     conn = sqlite3.connect(DATABASE_PATH)
@@ -110,7 +108,6 @@ def get_price(token, block_height):
 
 
 def init_price_token(token_name, token_from, token_to):
-    print(ALLORA_VALIDATOR_API_URL)
     try:
         check_create_table()
         # Check if there is any existing data for the specified token
@@ -165,62 +162,16 @@ def init_price_token(token_name, token_from, token_to):
         raise e 
 
 
-def get_test_losses_data():
-    combined_value = random.uniform(100, 200)
-    naive_value = random.uniform(100, 200)
-    inferer_value = random.uniform(100, 200)
-    one_out_inferer_value = random.uniform(100, 200)
-    forecaster_value = random.uniform(100, 200)
-    out_out_forecaster_value = random.uniform(100, 200)
-    out_in_forecaster_value =  random.uniform(100, 200)
-    test_data = '{"combined_value":"' + str(combined_value) + '","inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(inferer_value) + '"}],"forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(forecaster_value) + '"}],"naive_value":"' + str(naive_value) + '","one_out_inferer_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(one_out_inferer_value) + '"}],"one_out_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(out_out_forecaster_value) + '"}],"one_in_forecaster_values":[{"worker":"' + WORKER_ADDRESS_TEST_1 + '","value":"' + str(out_in_forecaster_value) + '"}]}'
-    return test_data, HTTP_RESPONSE_CODE_200
-
-
-def get_losses_data(topic, blockHeight):
-    try:
-        url = ALLORA_VALIDATOR_API_URL + topic + "/" + blockHeight
-        print(f"url: {url}")
-        response = requests.get(url)
-        response.raise_for_status()  # Raise exception if request fails
-        return response.json(), HTTP_RESPONSE_CODE_200
-    except Exception as e:
-        print(f'Failed to get data for {topic} topic for url: {url}: {str(e)}')
-        return '{}', HTTP_RESPONSE_CODE_500
-
 def get_latest_network_block():
     try:
-        url = ALLORA_VALIDATOR_API_URL + "cosmos/base/tendermint/v1beta1/blocks/latest"
+        url = ALLORA_VALIDATOR_API_URL + URL_QUERY_LATEST_BLOCK
+        print(f"latest network block url: {url}")
         response = requests.get(url)
         response.raise_for_status()  # Raise exception if request fails
         return response.json(), HTTP_RESPONSE_CODE_200
     except Exception as e:
         print(f'Failed to get block height: {str(e)}')
         return '{}', HTTP_RESPONSE_CODE_500
-
-@app.route('/losses/<topic>/<blockHeight>')
-def get_losses(topic, blockHeight):
-    print(f"Getting losses for {topic} , {blockHeight}")
-    if GEN_TEST_DATA:
-        print("Generating test data for topic " + topic + " and block height " + blockHeight)
-        test_data = get_test_losses_data()
-        print("Test data: " + str(test_data))
-        return test_data
-    else:
-        try:
-            losses_data = get_losses_data(topic, blockHeight)
-            # Check if the response contains an error code. Any will do.
-            losses_data_json = json.loads(json.dumps(losses_data[0]))
-            if losses_data_json.get('code'):
-                error_dict = {"error": losses_data_json.get('message')}
-                print("Error in fetching losses data: ", error_dict)
-                return jsonify(error_dict), HTTP_RESPONSE_CODE_500
-            else:
-                return jsonify(losses_data_json), HTTP_RESPONSE_CODE_200
-
-        except Exception as e:
-            print(f'Failed to get data for {topic} topic: {str(e)}')
-            return '{}', HTTP_RESPONSE_CODE_500
 
 if __name__ == '__main__':
     init_price_token(TOKEN_NAME, TOKEN_CG_ID, 'usd')
