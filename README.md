@@ -39,8 +39,8 @@ A complete working example is provided in the `docker-compose.yml` file.
 
     Run the following commands from the project's root directory to initialize the reputer:
     ```sh
-    chmod +x init.docker
-    ./init.docker
+    chmod +x init.config
+    ./init.config
     ```
     These commands will:
     - Automatically create Allora keys for your reputer.
