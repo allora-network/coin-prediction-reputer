@@ -61,31 +61,3 @@ jobs:
             docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$tag
             docker push $ECR_REGISTRY/$ECR_REPOSITORY:$tag
           done
-
-      - name: b7s Build, tag, and push image to Amazon ECR
-        id: build-push-image-b7s
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{github.event.repository.name}}-b7s 
-        run: |
-          #! Due to we trigger on push.tags GITHUB_REF - is the tag name
-          GIT_TAG="$(echo $GITHUB_REF| sed 's#refs/tags/##')"
-
-          IMAGE_TAG="${GITHUB_SHA:0:8}"
-          EXTRA_IMAGE_TAGS=$GIT_TAG
-
-          #! Add latest tag only if on named releases tag='v*'
-          if [[ ${GIT_TAG} == v* ]]; then
-            EXTRA_IMAGE_TAGS="${EXTRA_IMAGE_TAGS};latest"
-          fi
-
-          # Build a docker container and push it to ECR so that it can be deployed to ECS.
-          docker build --pull -f Dockerfile_b7s \
-              -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-          # Build and PUSH additional tags
-          for tag in $(echo $EXTRA_IMAGE_TAGS| tr ";" "\n"); do
-            docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$tag
-            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$tag
-          done
