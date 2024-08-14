@@ -9,6 +9,7 @@ services:
       - ALLORA_VALIDATOR_API_URL=https://localhost:1317/
       - TOKEN=ETH
       - TOKEN_CG_ID=ethereum
+      - CGC_API_KEY=YOUR_API_KEY
     ports:
       - "8000:8000"
     volumes:
