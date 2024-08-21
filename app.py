@@ -102,7 +102,7 @@ def get_price(token, block_height):
     result = cursor.fetchone()
     conn.close()
     if result:
-        return str('"' + str(result[1]) + '"'), 200
+        return str(result[1]), 200
     else:
         return jsonify({'error': 'No price data found for the specified token and block_height'}), HTTP_RESPONSE_CODE_404
 
