@@ -76,11 +76,11 @@ This setup allows you to develop your model without the need to bring up the off
 
     - Request ETH price ground truths:
       ```sh
-      curl http://127.0.0.1:8000/gt/ETHUSD/1200
+      curl http://127.0.0.1:8000/gt/ETHUSD/1200/10
       ```
       Expected response:
       ```json
-      {"value":"2564.021586281073"}
+      {"2564.021586281073"}
       ```
     - Add a new data point:
       ```sh

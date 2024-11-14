@@ -9,7 +9,9 @@
         "maxRetries": 5,
         "retryDelay": 3,
         "accountSequenceRetryDelay": 5,
-        "submitTx": true
+        "submitTx": true,
+        "maxFees": 1000000,
+        "gasPrices": 0.08
     },
     "reputer": [
         {
@@ -19,8 +21,9 @@
             "loopSeconds": 30,
             "minStake": 100000,
             "groundTruthParameters": {
-                "GroundTruthEndpoint": "http://truth:8000/gt/{Token}/{BlockHeight}",
-                "Token": "ETHUSD"
+                "GroundTruthEndpoint": "http://truth:8000/gt/{Token}/{BlockHeight}/{TimeframeMinutes}",
+                "Token": "ETHUSD",
+                "TimeframeMinutes": 10
             },
             "lossFunctionParameters": {
                 "LossFunctionService": "http://loss:3000",
