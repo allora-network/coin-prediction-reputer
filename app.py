@@ -17,8 +17,8 @@ URL_QUERY_LATEST_BLOCK="cosmos/base/tendermint/v1beta1/blocks/latest"
 API_PORT = int(os.environ.get('API_PORT', 5000))
 ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','https://allora-api.testnet.allora.network/'))
 DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
+BLOCK_TIME_SECONDS = int(os.environ.get('BLOCK_TIME_SECONDS', 10))
 
-BLOCK_TIME_SECONDS = 10
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_404 = 404
 HTTP_RESPONSE_CODE_500 = 500

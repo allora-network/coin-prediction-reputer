@@ -9,6 +9,7 @@ services:
       - ALLORA_VALIDATOR_API_URL=https://allora-api.testnet.allora.network/
       - TOKEN=ETH
       - TOKEN_CG_ID=ethereum
+      - BLOCK_TIME_SECONDS=10
     ports:
       - "8000:8000"
     volumes:
