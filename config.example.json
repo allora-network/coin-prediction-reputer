@@ -11,7 +11,9 @@
         "accountSequenceRetryDelay": 5,
         "submitTx": true,
         "maxFees": 1000000,
-        "gasPrices": 0.08
+        "gasPrices": 0.08,
+        "blockDurationEstimated": 10,
+        "windowCorrectionFactor": 0.8
     },
     "reputer": [
         {
