@@ -17,8 +17,8 @@ URL_QUERY_LATEST_BLOCK="cosmos/base/tendermint/v1beta1/blocks/latest"
 API_PORT = int(os.environ.get('API_PORT', 5000))
 ALLORA_VALIDATOR_API_URL = str(os.environ.get('ALLORA_VALIDATOR_API_URL','https://allora-api.testnet.allora.network/'))
 DATABASE_PATH = os.environ.get('DATABASE_PATH', 'prices.db')
+BLOCK_TIME_SECONDS = int(os.environ.get('BLOCK_TIME_SECONDS', 10))
 
-BLOCK_TIME_SECONDS = 5
 HTTP_RESPONSE_CODE_200 = 200
 HTTP_RESPONSE_CODE_404 = 404
 HTTP_RESPONSE_CODE_500 = 500
@@ -37,7 +37,7 @@ def check_create_table():
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS prices
-                      (block_height INTEGER, token TEXT, price REAL,
+                      (block_height INTEGER, token TEXT, price REAL, timestamp INTEGER,
                       PRIMARY KEY (block_height, token))''')
     conn.commit()
     conn.close()
@@ -67,10 +67,14 @@ def update_price(token_name=TOKEN_NAME, token_from=TOKEN_CG_ID, token_to='usd'):
         block_height = block_data[0]['block']['header']['height']
         token = token_name.lower()
         
+        # Get current timestamp
+        current_timestamp = int(datetime.now().timestamp())
+        
         # Save price into database
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price) VALUES (?, ?, ?)", (block_height, token, price))
+        cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price, timestamp) VALUES (?, ?, ?, ?)", 
+                      (block_height, token, price, current_timestamp))
         cursor.close()
 
         cursor = conn.cursor()
@@ -85,26 +89,56 @@ def update_price(token_name=TOKEN_NAME, token_from=TOKEN_CG_ID, token_to='usd'):
         return jsonify({'error': f'Failed to update {token_name} price: {str(e)}'}), HTTP_RESPONSE_CODE_500
 
 
-@app.route('/gt/<token>/<block_height>')
-def get_price(token, block_height):
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT block_height, price 
-        FROM prices 
-        WHERE token=? AND block_height <= ? 
-        ORDER BY ABS(block_height - ?) LIMIT 1
-    """, (
-        token.lower(), 
-        block_height,
-        block_height
-    ))
-    result = cursor.fetchone()
-    conn.close()
-    if result:
-        return str('"' + str(result[1]) + '"'), 200
-    else:
-        return jsonify({'error': 'No price data found for the specified token and block_height'}), HTTP_RESPONSE_CODE_404
+@app.route('/gt/<token>/<block_height>/<timeframe_minutes>')
+def get_price(token, block_height, timeframe_minutes):
+    try:
+        # First, get the timestamp for the given block height (nonce)
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Get the timestamp for the reference block height
+        cursor.execute("""
+            SELECT timestamp 
+            FROM prices 
+            WHERE token=? AND block_height <= ? 
+            ORDER BY ABS(block_height - ?) LIMIT 1
+        """, (
+            token.lower(), 
+            block_height,
+            block_height
+        ))
+        base_timestamp_result = cursor.fetchone()
+        print(f"Reference time: {datetime.fromtimestamp(base_timestamp_result[0]).strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        if not base_timestamp_result:
+            return jsonify({'error': 'No reference timestamp found for the specified block height'}), HTTP_RESPONSE_CODE_404
+            
+        # Calculate target timestamp (base timestamp + timeframe_minutes)
+        target_timestamp = base_timestamp_result[0] + (int(timeframe_minutes) * 60)
+        print(f"Target time: {datetime.fromtimestamp(target_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # Find the price closest to the target timestamp
+        cursor.execute("""
+            SELECT price 
+            FROM prices 
+            WHERE token=? AND timestamp <= ? 
+            ORDER BY ABS(timestamp - ?) LIMIT 1
+        """, (
+            token.lower(), 
+            target_timestamp,
+            target_timestamp
+        ))
+        result = cursor.fetchone()
+        conn.close()
+
+        if result:
+            print(f"Found price: {result[0]}")
+            return str('"' + str(result[0]) + '"'), 200
+        else:
+            return jsonify({'error': 'No price data found for the calculated timestamp'}), HTTP_RESPONSE_CODE_404
+            
+    except Exception as e:
+        return jsonify({'error': f'Error retrieving price: {str(e)}'}), HTTP_RESPONSE_CODE_500
 
 
 def init_price_token(token_name, token_from, token_to):
@@ -142,16 +176,17 @@ def init_price_token(token_name, token_from, token_to):
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         for data_point in historical_data:
-            price_timestamp = data_point[0]
+            price_timestamp = int(data_point[0] / 1000)  # Convert milliseconds to seconds
             # Convert timestamp to block height
-            blocks_diff = (end_date_epoch - (price_timestamp / 1000)) / BLOCK_TIME_SECONDS
+            blocks_diff = (end_date_epoch - price_timestamp) / BLOCK_TIME_SECONDS
             block_height = int(latest_block_height - blocks_diff)
 
             if (block_height < 1):
                 continue
             
             price = data_point[1]
-            cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price) VALUES (?, ?, ?)", (block_height, token_name.lower(), price))
+            cursor.execute("INSERT OR REPLACE INTO prices (block_height, token, price, timestamp) VALUES (?, ?, ?, ?)", 
+                          (block_height, token_name.lower(), price, price_timestamp))
             print(f"inserting data point - block {block_height} : {price}" )
         conn.commit()
         conn.close()

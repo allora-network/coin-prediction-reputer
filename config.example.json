@@ -5,22 +5,26 @@
         "alloraHomeDir": "",
         "gas": "auto",
         "gasAdjustment": 1.5,
+        "gasPrices": 0.08,
+        "maxFees": 200000,
         "nodeRpc": "https://allora-rpc.testnet.allora.network",
         "maxRetries": 5,
         "retryDelay": 3,
         "accountSequenceRetryDelay": 5,
-        "submitTx": true
+        "submitTx": true,
+        "blockDurationEstimated": 10,
+        "windowCorrectionFactor": 0.8
     },
     "reputer": [
         {
             "topicId": 1,
             "groundTruthEntrypointName": "api-worker-reputer",
             "lossFunctionEntrypointName": "api-worker-reputer",
-            "loopSeconds": 30,
             "minStake": 100000,
             "groundTruthParameters": {
-                "GroundTruthEndpoint": "http://truth:8000/gt/{Token}/{BlockHeight}",
-                "Token": "ETHUSD"
+                "GroundTruthEndpoint": "http://truth:8000/gt/{Token}/{BlockHeight}/{TimeframeMinutes}",
+                "Token": "ETHUSD",
+                "TimeframeMinutes": 10
             },
             "lossFunctionParameters": {
                 "LossFunctionService": "http://loss:3000",

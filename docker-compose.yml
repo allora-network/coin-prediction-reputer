@@ -1,14 +1,15 @@
 services:
   truth:
+    container_name: truth
     build: .
     command: python -u /app/app.py
     environment:
       - DATABASE_PATH=/app/data/prices.db
       - API_PORT=8000
-      # - ALLORA_VALIDATOR_API_URL=https://allora-api.testnet-1.testnet.allora.network/
       - ALLORA_VALIDATOR_API_URL=https://allora-api.testnet.allora.network/
       - TOKEN=ETH
       - TOKEN_CG_ID=ethereum
+      - BLOCK_TIME_SECONDS=10
     ports:
       - "8000:8000"
     volumes:
@@ -25,7 +26,7 @@ services:
 
   reputer:
     container_name: reputer
-    image: alloranetwork/allora-offchain-node:v0.5.0
+    image: alloranetwork/allora-offchain-node:v0.6.0
     volumes:
       - ./worker-data:/data
     depends_on:
